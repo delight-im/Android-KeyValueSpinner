@@ -2,13 +2,13 @@ package im.delight.android.keyvaluespinner;
 
 /**
  * Copyright 2014 www.delight.im <info@delight.im>
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -30,11 +30,11 @@ import android.widget.SpinnerAdapter;
 
 /**
  * Spinner component that works with keys of an arbitrary class and exposes both the selected key and value with <code>spinner.getKey();</code> and <code>spinner.getValue();</code>
- * 
+ *
  * @param <K> the class for each entry's key
  */
 public class KeyValueSpinner<K> extends Spinner {
-	
+
 	private Pair<K> mSelected;
 	private AdapterView.OnItemSelectedListener mAdditionalOnItemSelectedListener;
 	private final AdapterView.OnItemSelectedListener mOnItemSelectedListener = new AdapterView.OnItemSelectedListener() {
@@ -77,17 +77,17 @@ public class KeyValueSpinner<K> extends Spinner {
 		super(context, attrs, defStyle);
 		init();
 	}
-	
+
 	/** Must be called manually if you use the constructor <code>Spinner(Context context, AttributeSet attrs, int defStyle, int mode)</code>, will be called automatically, otherwise */
 	public void init() {
 		super.setOnItemSelectedListener(mOnItemSelectedListener);
 	}
-	
+
 	@Override
 	public void setOnItemSelectedListener(AdapterView.OnItemSelectedListener listener) {
 		mAdditionalOnItemSelectedListener = listener;
 	}
-	
+
 	public K getKey() {
 		if (mSelected == null) {
 			return null;
@@ -96,7 +96,7 @@ public class KeyValueSpinner<K> extends Spinner {
 			return mSelected.getKey();
 		}
 	}
-	
+
 	public CharSequence getValue() {
 		if (mSelected == null) {
 			return null;
@@ -105,17 +105,26 @@ public class KeyValueSpinner<K> extends Spinner {
 			return mSelected.getValue();
 		}
 	}
-	
+
+	@SuppressWarnings("unchecked")
 	@Override
 	public void setAdapter(SpinnerAdapter adapter) {
 		if (adapter instanceof Adapter) {
 			super.setAdapter(adapter);
+
+			try {
+				Object first = adapter.getItem(0);
+				if (first instanceof Pair<?>) {
+					mSelected = (Pair<K>) first;
+				}
+			}
+			catch (Exception e) { }
 		}
 		else {
 			throw new RuntimeException("You must pass an instance of KeyValueSpinnerAdapter to setAdapter(...)");
 		}
 	}
-	
+
 	@SuppressWarnings("unchecked")
 	public void sort() {
 		final SpinnerAdapter adapter = getAdapter();
@@ -128,7 +137,7 @@ public class KeyValueSpinner<K> extends Spinner {
 			throw new RuntimeException("You cannot sort the Spinner's values when there is no Adapter set yet");
 		}
 	}
-	
+
 	/**
 	 * Adapter that accepts instances of KeyValuePair and may be used as the data source for a KeyValueSpinner.
 	 *
@@ -165,14 +174,14 @@ public class KeyValueSpinner<K> extends Spinner {
 			super(context, textViewResourceId, objects);
 			init();
 		}
-		
+
 		protected void init() {
 			super.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
 		}
-		
+
 		/**
 		 * Creates a new KeyValueSpinner.Adapter from external resources
-		 * 
+		 *
 		 * @param context the application context for access to the Resources and initializing the adapter
 		 * @param keysArrayResId the string-array resource holding the keys
 		 * @param valuesArrayResId the string-array resource holding the values
@@ -184,13 +193,13 @@ public class KeyValueSpinner<K> extends Spinner {
 
 			final CharSequence[] keys = resources.getTextArray(keysArrayResId);
 			final CharSequence[] values = resources.getTextArray(valuesArrayResId);
-			
+
 			return createFromArrays(context, keys, values, textViewResId);
 		}
-		
+
 		/**
 		 * Creates a new KeyValueSpinner.Adapter from two CharSequence[] arrays
-		 * 
+		 *
 		 * @param context the application context for initializing the adapter
 		 * @param keys the array holding the keys
 		 * @param values the array holding the values
@@ -203,39 +212,40 @@ public class KeyValueSpinner<K> extends Spinner {
 			for (int k = 0; k < keys.length; k++) {
 				entries.add(new KeyValueSpinner.Pair<CharSequence>(keys[k], values[k]));
 			}
-			
+
 			return new Adapter<CharSequence>(context, textViewResId, entries);
 		}
-		
+
 		public void sort() {
 			super.sort(new PairComparator<K>());
 		}
-		
+
 	}
-	
+
 	/**
 	 * Wrapper class for key-value pairs. Keys may be of any class and values must be of CharSequence or any subclass.
 	 *
 	 * @param <K> the class for the keys
 	 */
 	public static class Pair<K> {
-		
+
 		public final K mKey;
 		public final CharSequence mValue;
-		
+
 		public Pair(K key, CharSequence value) {
 			mKey = key;
 			mValue = value;
 		}
-		
+
 		public K getKey() {
 			return mKey;
 		}
-		
+
 		public CharSequence getValue() {
 			return mValue;
 		}
-		
+
+		@Override
 		public String toString() {
 			if (mValue == null) {
 				return null;
@@ -246,14 +256,14 @@ public class KeyValueSpinner<K> extends Spinner {
 		}
 
 	}
-	
+
 	public static class PairComparator<K> implements Comparator<Pair<K>> {
 
 		@Override
 		public int compare(Pair<K> a, Pair<K> b) {
 			return a.getValue().toString().compareToIgnoreCase(b.getValue().toString());
 		}
-		
+
 	}
 
 }
